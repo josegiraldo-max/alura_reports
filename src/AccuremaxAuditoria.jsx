@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from "recharts";
+import * as XLSX from "xlsx";
 
 const B = "#993935";
 const BDark = "#7a2c2a";
@@ -583,12 +584,67 @@ export default function AccuremaxApp() {
   const recCats = [...new Set(RECS_LIBRARY.map(r => r.cat))];
 
   const handleExport = () => {
-    const data = { visita: form, canalCounts, verificacionEquipo: { equipo: form.equipo, respuestas: equipScores, puntuacionTotal: equipTotal, observaciones: equipObs }, verificacionEcuacion: { puntuacion: eqScore, observaciones: eqObs }, evidenciaFotografica: photos.map((p, i) => ({ label: PHOTO_LABELS[i], archivo: p?.name || null })), recomendaciones: [...selectedRecs.map(r => r.text), ...(customRec ? [customRec] : [])], exportadoEn: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = `auditoria_magro_${(form.planta || "planta").replace(/\s+/g, "_")}_${form.fecha}.json`;
-    a.click(); URL.revokeObjectURL(url);
+    const wb = XLSX.utils.book_new();
+
+    // Hoja 1: Datos generales
+    const sheetVisita = XLSX.utils.aoa_to_sheet([
+      ["Campo", "Valor"],
+      ["Planta", form.planta || ""],
+      ["Fecha de auditoría", form.fecha || ""],
+      ["Auditor", form.responsable || ""],
+      ["Responsable planta", form.responsablePlanta || ""],
+      ["Operario", form.operario || ""],
+      ["Equipo", form.equipo || ""],
+      ["Total canales evaluadas", form.canalesTotal || ""],
+      ["Canales inclinadas", form.canalesInclinadas || ""],
+      ["Observaciones inspección canales", form.canalObs || ""],
+      ["Observaciones generales", form.observaciones || ""],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheetVisita, "Datos generales");
+
+    // Hoja 2: Conteo de canales
+    const sheetCanales = XLSX.utils.aoa_to_sheet([
+      ["Clasificación", "Cantidad", "Porcentaje"],
+      ["Buena (B)", canalCounts.B, totalCanales > 0 ? `${Math.round((canalCounts.B/totalCanales)*100)}%` : ""],
+      ["Regular (R)", canalCounts.R, totalCanales > 0 ? `${Math.round((canalCounts.R/totalCanales)*100)}%` : ""],
+      ["Mala (M)", canalCounts.M, totalCanales > 0 ? `${Math.round((canalCounts.M/totalCanales)*100)}%` : ""],
+      ["Insuficiente (I)", canalCounts.I, totalCanales > 0 ? `${Math.round((canalCounts.I/totalCanales)*100)}%` : ""],
+      ["Total", totalCanales, "100%"],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheetCanales, "Canales");
+
+    // Hoja 3: Verificación del equipo
+    const equipRows2 = EQUIP_TABLES[form.equipo] || EQUIP_GP;
+    const sheetEquipo = XLSX.utils.aoa_to_sheet([
+      ["Ítem", "Ponderación", "Calificación"],
+      ...equipRows2.map((row, i) => [row.item, row.pond, equipScores[i] || ""]),
+      [],
+      ["Puntuación total", equipTotal, ""],
+      ["Observaciones", equipObs || "", ""],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheetEquipo, "Verificación equipo");
+
+    // Hoja 4: Verificación ecuación
+    const sheetEcuacion = XLSX.utils.aoa_to_sheet([
+      ["Campo", "Valor"],
+      ["Puntuación", eqScore || ""],
+      ["Observaciones", eqObs || ""],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheetEcuacion, "Verificación ecuación");
+
+    // Hoja 5: Recomendaciones
+    const recsRows = [
+      ["Categoría", "Recomendación"],
+      ...selectedRecs.map(r => {
+        const lib = RECS_LIBRARY.find(x => x.id === r.id);
+        return [lib ? lib.cat : "Personalizada", r.text];
+      }),
+      ...(customRec ? [["Personalizada", customRec]] : []),
+    ];
+    const sheetRecs = XLSX.utils.aoa_to_sheet(recsRows);
+    XLSX.utils.book_append_sheet(wb, sheetRecs, "Recomendaciones");
+
+    XLSX.writeFile(wb, `auditoria_magro_${(form.planta || "planta").replace(/\s+/g, "_")}_${form.fecha || "2026"}.xlsx`);
     showToast("Datos exportados correctamente");
   };
 
@@ -875,7 +931,7 @@ export default function AccuremaxApp() {
                     style={{ padding: "20px 12px", borderRadius: 10, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", color: White, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, transition: "background .15s" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")} onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}>
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 13, fontWeight: 700 }}>Exportar datos</div><div style={{ fontSize: 11, opacity: 0.6, marginTop: 2 }}>JSON · todos los campos</div></div>
+                    <div style={{ textAlign: "center" }}><div style={{ fontSize: 13, fontWeight: 700 }}>Exportar datos</div><div style={{ fontSize: 11, opacity: 0.6, marginTop: 2 }}>Excel · todos los campos</div></div>
                   </button>
                   <button onClick={() => showToast("Borrador guardado", "info")}
                     style={{ padding: "20px 12px", borderRadius: 10, background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.25)", color: White, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, transition: "background .15s" }}
