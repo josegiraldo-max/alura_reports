@@ -465,7 +465,7 @@ function ReportView({ data, onBack }) {
               const p = photos[i];
               return (
                 <div key={i}>
-                  <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${SandBorder}`, marginBottom: 8, height: 180, background: Sand, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${SandBorder}`, marginBottom: 8, height: 280, background: Sand, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {p ? (
                       <>
                         <img src={p.url} alt={PHOTO_LABELS[i]} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -871,14 +871,14 @@ export default function AccuremaxApp() {
                   <div key={idx}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: Ink, marginBottom: 8, lineHeight: 1.4 }}>{PHOTO_LABELS[idx]}</div>
                     {photos[idx] ? (
-                      <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: `1px solid ${SandBorder}`, aspectRatio: "4/3" }}>
+                      <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", border: `1px solid ${SandBorder}`, aspectRatio: "16/9" }}>
                         <img src={photos[idx].url} alt={PHOTO_LABELS[idx]} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         <button onClick={() => removePhoto(idx)} style={{ position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "none", color: White, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.55)", padding: "14px 10px 8px", fontSize: 11, color: White, lineHeight: 1.3 }}>{photos[idx].name}</div>
                       </div>
                     ) : (
                       <div onClick={() => photoRefs[idx].current?.click()}
-                        style={{ aspectRatio: "4/3", border: `2px dashed ${SandBorder}`, borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", background: Sand, gap: 8 }}
+                        style={{ aspectRatio: "16/9", border: `2px dashed ${SandBorder}`, borderRadius: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", background: Sand, gap: 8 }}
                         onMouseEnter={e => (e.currentTarget.style.borderColor = B)} onMouseLeave={e => (e.currentTarget.style.borderColor = SandBorder)}>
                         <div style={{ width: 44, height: 44, background: BLight, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={B} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
