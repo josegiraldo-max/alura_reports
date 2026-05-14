@@ -1120,7 +1120,7 @@ export default function AccuremaxApp() {
                   </button>
                 </div>
                 {/* Borrar formulario */}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
                   <button onClick={handleReset}
                     style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "6px 14px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", cursor: "pointer", transition: "all .15s" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,100,100,0.6)"; e.currentTarget.style.color = "#ff9999"; }}
