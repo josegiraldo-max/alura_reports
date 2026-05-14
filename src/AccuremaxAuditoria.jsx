@@ -601,21 +601,13 @@ function ReportView({ data, onBack }) {
                   <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 22, fontWeight: 700, color: scoreSt(eqNum,20).color, lineHeight: 1 }}>{eqScore}</div>
                   <div style={{ fontSize: 10, color: scoreSt(eqNum,20).color, lineHeight: 1.4 }}>de 20 pts<br/><strong>{Math.round((eqNum/20)*100)}%</strong></div>
                 </div>
-                {eqObs
-                  ? <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7 }}>{eqObs}</p>
-                  : <>
-                      <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7, marginBottom: 8 }}>
-                        {eqNum >= 15
-                          ? "Se verificaron los resultados de magro registrados en el sistema, constatando que la ecuación aplicada corresponde a la versión vigente establecida para el año 2023."
-                          : "Al verificar los resultados de magro registrados en el sistema, se identificó que la ecuación aplicada no corresponde a la versión vigente establecida para el año 2023. Se evidenciaron desviaciones en su implementación, lo que genera inconsistencias en los datos reportados."}
-                      </p>
-                      <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7 }}>
-                        {eqNum >= 15
-                          ? "Esta se encuentra implementada de manera consistente, sin evidenciarse desviaciones en su aplicación."
-                          : ""}
-                      </p>
-                    </>
-                }
+                <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7 }}>
+                  {eqObs
+                    ? eqObs
+                    : eqNum >= 15
+                      ? "Se verificaron los resultados de magro, la ecuación aplicada corresponde a la versión vigente 2023. Esta se encuentra implementada de manera consistente y sin desviaciones."
+                      : "Se verificaron los resultados de magro, la ecuación aplicada corresponde a la versión vigente 2023. Esta no se encuentra implementada de manera consistente y sin desviaciones."}
+                </p>
               </>
             ) : <div style={{ padding: "24px 0", textAlign: "center", color: Muted, fontSize: 12, fontStyle: "italic" }}>Sin puntuación registrada</div>}
           </div>
@@ -632,7 +624,7 @@ function ReportView({ data, onBack }) {
               <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 22, fontWeight: 700, color: scoreSt(equipTotal,20).color, lineHeight: 1 }}>{equipTotal}</div>
               <div style={{ fontSize: 10, color: scoreSt(equipTotal,20).color, lineHeight: 1.4 }}>de 20 pts<br/><strong>{Math.round((equipTotal/20)*100)}%</strong></div>
             </div>
-            {equipObs && <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7 }}>{equipObs}</p>}
+            <p style={{ fontSize: 12, color: Ink, lineHeight: 1.7 }}>{equipObs || (equipTotal >= 16 ? "El equipo se encuentra en condiciones adecuadas de funcionamiento. Se evidencia buen mantenimiento y limpieza, lo que contribuye a la confiabilidad de los resultados." : "El equipo presenta condiciones de mantenimiento deficientes. Se recomienda realizar revisión técnica, limpieza profunda y establecer un plan de mantenimiento preventivo.")}</p>
           </div>
         </div>
 
@@ -1252,10 +1244,30 @@ export default function AccuremaxApp() {
             </SectionCard>
 
             <SectionCard number="02c" title="Canales con inclinación" subtitle="Número de canales donde se presentó inclinación del equipo (aparece en tarjeta A)">
-              <div style={{ maxWidth: 260 }}>
-                <Label>Canales inclinadas (cantidad)</Label>
-                <Input type="number" min="0" placeholder="Ej. 51" value={form.canalesInclinadas} onChange={e => set("canalesInclinadas", e.target.value)} />
-              </div>
+              {(() => {
+                const totalCan = Number(form.canalesTotal) || Object.values(canalCounts).reduce((a,b)=>a+b,0) || 300;
+                const val = Number(form.canalesInclinadas) || 0;
+                const pct = totalCan > 0 ? Math.round((val / totalCan) * 100) : 0;
+                return (
+                  <div>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+                      <span style={{ fontSize: 13, color: Muted }}>Canales inclinadas</span>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                        <span style={{ fontFamily: "'Nunito',sans-serif", fontSize: 38, fontWeight: 700, color: val > 0 ? B : Muted, lineHeight: 1 }}>{val}</span>
+                        <span style={{ fontSize: 12, color: Muted }}>de {totalCan}</span>
+                        {val > 0 && <span style={{ fontSize: 13, fontWeight: 700, color: B }}>({pct}%)</span>}
+                      </div>
+                    </div>
+                    <input type="range" min="0" max={totalCan} value={val}
+                      onChange={e => set("canalesInclinadas", e.target.value)}
+                      style={{ width: "100%", accentColor: B, cursor: "pointer", height: 6, borderRadius: 4 }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                      <span style={{ fontSize: 10, color: Muted }}>0</span>
+                      <span style={{ fontSize: 10, color: Muted }}>{totalCan}</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </SectionCard>
 
             {/* 03 EQUIPO */}
