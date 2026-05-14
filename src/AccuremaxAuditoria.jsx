@@ -731,7 +731,7 @@ export default function AccuremaxApp() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
-            {[{ id: "form", label: "Datos de la auditoría" }, { id: "report", label: "Informe" }].map(tab => (
+            {[{ id: "form", label: "Datos" }, { id: "report", label: "Informe" }].map(tab => (
               <button key={tab.id} onClick={() => tab.id === "report" ? setView("report") : setView("form")}
                 style={{ padding: "0 22px", background: view === tab.id ? "rgba(255,255,255,0.15)" : "transparent", border: "none", borderBottom: view === tab.id ? "3px solid white" : "3px solid transparent", color: view === tab.id ? White : "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all .15s", marginBottom: "-3px" }}>
                 {tab.label}
