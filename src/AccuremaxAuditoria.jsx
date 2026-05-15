@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useReducer } from "react";
-import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, ReferenceLine } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, ReferenceLine, Brush, CartesianGrid } from "recharts";
 import * as XLSX from "xlsx";
 
 const loadImgBase64 = (url) =>
@@ -641,68 +641,125 @@ function HistorialView({ history, onDelete }) {
                     </div>
                   </div>
 
-                  <div style={{ padding: "16px 20px 8px", display: "flex", gap: 24, flexWrap: "wrap" }}>
+                  <div style={{ padding: "20px 24px 20px" }}>
                     {/* Gráfica evolución */}
-                    <div style={{ flex: "1 1 300px", minWidth: 260 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Evolución de cumplimiento</div>
-                      <div style={{ height: 160 }}>
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>Evolución de cumplimiento</div>
+                      <div style={{ height: 220 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
-                            <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: Muted }} axisLine={false} tickLine={false} />
-                            <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: Muted }} axisLine={false} tickLine={false} width={28} tickFormatter={v => `${v}%`} />
-                            <Tooltip formatter={v => [`${v}%`, "Cumplimiento"]} labelStyle={{ fontSize: 11, color: Ink }} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${SandBorder}` }} />
-                            <ReferenceLine y={80} stroke={Green} strokeDasharray="4 3" strokeWidth={1} />
-                            <ReferenceLine y={50} stroke={Amber} strokeDasharray="4 3" strokeWidth={1} />
-                            <Line type="monotone" dataKey="pct" stroke={B} strokeWidth={2.5} dot={{ r: 4, fill: B, strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                          </LineChart>
+                          <AreaChart data={chartData} margin={{ left: 10, right: 24, top: 12, bottom: chartData.length > 4 ? 30 : 8 }}>
+                            <defs>
+                              <linearGradient id={`grad-${planta.replace(/\s/g,"")}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={B} stopOpacity={0.18} />
+                                <stop offset="100%" stopColor={B} stopOpacity={0.01} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke={SandBorder} vertical={false} />
+                            <XAxis
+                              dataKey="fecha"
+                              tick={{ fontSize: 11, fill: Muted, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+                              axisLine={{ stroke: SandBorder }}
+                              tickLine={false}
+                              padding={{ left: 16, right: 16 }}
+                            />
+                            <YAxis
+                              domain={[0, 100]}
+                              tick={{ fontSize: 11, fill: Muted, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+                              axisLine={false}
+                              tickLine={false}
+                              width={42}
+                              tickFormatter={v => `${v}%`}
+                              ticks={[0, 25, 50, 75, 100]}
+                            />
+                            <Tooltip
+                              formatter={v => [`${v}%`, "Cumplimiento"]}
+                              labelFormatter={l => `Auditoría: ${l}`}
+                              contentStyle={{ fontSize: 12, borderRadius: 10, border: `1px solid ${SandBorder}`, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+                              labelStyle={{ fontWeight: 700, color: Ink, marginBottom: 4 }}
+                              itemStyle={{ color: B }}
+                            />
+                            <ReferenceLine y={80} stroke={Green} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "80%", position: "insideTopRight", fontSize: 10, fill: Green, fontWeight: 700 }} />
+                            <ReferenceLine y={50} stroke={Amber} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "50%", position: "insideTopRight", fontSize: 10, fill: Amber, fontWeight: 700 }} />
+                            <Area
+                              type="monotone"
+                              dataKey="pct"
+                              stroke={B}
+                              strokeWidth={2.5}
+                              fill={`url(#grad-${planta.replace(/\s/g,"")})`}
+                              dot={{ r: 5, fill: White, stroke: B, strokeWidth: 2.5 }}
+                              activeDot={{ r: 7, fill: B, stroke: White, strokeWidth: 2 }}
+                            />
+                            {chartData.length > 5 && (
+                              <Brush
+                                dataKey="fecha"
+                                height={22}
+                                stroke={SandBorder}
+                                fill={Sand}
+                                travellerWidth={8}
+                                startIndex={Math.max(0, chartData.length - 6)}
+                                tick={{ fontSize: 10, fill: Muted }}
+                              />
+                            )}
+                          </AreaChart>
                         </ResponsiveContainer>
                       </div>
-                      <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
-                        {[["≥80% Adecuado", Green], ["≥50% Regular", Amber], ["<50% Deficiente", B]].map(([l, c]) => (
-                          <span key={l} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: Muted }}>
-                            <span style={{ width: 18, height: 2, background: c, display: "inline-block", borderRadius: 1 }} />{l}
+                      <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
+                        {[["≥ 80% Adecuado", Green], ["≥ 50% Regular", Amber], ["< 50% Deficiente", B]].map(([l, c]) => (
+                          <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: Muted }}>
+                            <span style={{ width: 22, height: 2.5, background: c, display: "inline-block", borderRadius: 2 }} />{l}
                           </span>
                         ))}
                       </div>
                     </div>
 
                     {/* Tabla de registros */}
-                    <div style={{ flex: "1 1 220px", minWidth: 200 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Registros</div>
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                          <tr style={{ borderBottom: `1px solid ${SandBorder}` }}>
-                            {["Fecha", "%", "Estado", ""].map((h, i) => (
-                              <th key={i} style={{ padding: "4px 8px", textAlign: i === 0 ? "left" : "center", fontSize: 10, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[...registros].reverse().map((r, idx) => {
-                            const rst = scoreSt(r.pct);
-                            return (
-                              <tr key={r.id} style={{ borderBottom: idx < registros.length - 1 ? `1px solid ${SandBorder}` : "none" }}>
-                                <td style={{ padding: "7px 8px", fontSize: 12, color: Ink, whiteSpace: "nowrap" }}>{formatFecha(r.fecha)}</td>
-                                <td style={{ padding: "7px 8px", fontSize: 13, fontWeight: 800, color: rst.color, textAlign: "center", fontFamily: "'Nunito',sans-serif" }}>{r.pct}%</td>
-                                <td style={{ padding: "7px 8px", textAlign: "center" }}>
-                                  <span style={{ background: rst.bg, color: rst.color, borderRadius: 5, padding: "2px 7px", fontSize: 10, fontWeight: 700 }}>{rst.label}</span>
-                                </td>
-                                <td style={{ padding: "7px 8px", textAlign: "center" }}>
-                                  <button onClick={() => onDelete(r.id)} title="Eliminar"
-                                    style={{ background: "transparent", border: "none", cursor: "pointer", color: Muted, padding: 3, lineHeight: 1 }}
-                                    onMouseEnter={e => e.currentTarget.style.color = B}
-                                    onMouseLeave={e => e.currentTarget.style.color = Muted}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Detalle de auditorías</div>
+                      <div style={{ borderRadius: 8, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                          <thead>
+                            <tr style={{ background: Sand }}>
+                              {["Fecha", "Puntaje", "% Cumplimiento", "Estado", ""].map((h, i) => (
+                                <th key={i} style={{ padding: "9px 14px", textAlign: i <= 1 ? "left" : "center", fontSize: 10, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${SandBorder}` }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...registros].reverse().map((r, idx) => {
+                              const rst = scoreSt(r.pct);
+                              const prev = registros[registros.length - 2 - idx];
+                              const delta = prev ? r.pct - prev.pct : null;
+                              return (
+                                <tr key={r.id} style={{ borderBottom: idx < registros.length - 1 ? `1px solid ${SandBorder}` : "none", background: idx === 0 ? `${B}08` : White }}>
+                                  <td style={{ padding: "10px 14px", fontSize: 13, color: Ink, whiteSpace: "nowrap", fontWeight: idx === 0 ? 600 : 400 }}>{formatFecha(r.fecha)}</td>
+                                  <td style={{ padding: "10px 14px", fontSize: 12, color: Muted }}>{r.score}/100</td>
+                                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                                    <span style={{ fontSize: 15, fontWeight: 800, color: rst.color, fontFamily: "'Nunito',sans-serif" }}>{r.pct}%</span>
+                                    {delta !== null && (
+                                      <span style={{ fontSize: 10, fontWeight: 600, color: delta > 0 ? Green : delta < 0 ? B : Muted, marginLeft: 6 }}>
+                                        {delta > 0 ? "▲" : delta < 0 ? "▼" : "●"}{delta > 0 ? "+" : ""}{delta}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                                    <span style={{ background: rst.bg, color: rst.color, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{rst.label}</span>
+                                  </td>
+                                  <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                                    <button onClick={() => onDelete(r.id)} title="Eliminar"
+                                      style={{ background: "transparent", border: "none", cursor: "pointer", color: Muted, padding: 4, lineHeight: 1, borderRadius: 4 }}
+                                      onMouseEnter={e => e.currentTarget.style.color = B}
+                                      onMouseLeave={e => e.currentTarget.style.color = Muted}>
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ height: 12 }} />
                 </div>
               );
             })}
