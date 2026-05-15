@@ -252,7 +252,17 @@ function ReportView({ data, onBack }) {
     ["Operario", form.operario || "—"],
   ].filter(([, v]) => v && v !== "—");
 
-  const handlePDF = () => window.print();
+  const handlePDF = () => {
+    const el = document.getElementById("report-body");
+    const heightPx = el ? el.scrollHeight : 1400;
+    const heightMm = Math.ceil(heightPx * 0.2646) + 20;
+    const style = document.createElement("style");
+    style.id = "__pdf-page-size__";
+    style.textContent = `@page { size: 210mm ${heightMm}mm; margin: 0; } @media print { #report-body { padding: 16px !important; } }`;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => document.getElementById("__pdf-page-size__")?.remove(), 1000);
+  };
 
   const handleExportHTML = () => {
     const el = document.getElementById("report-body");
