@@ -619,8 +619,12 @@ function HistorialView({ history, onDelete }) {
               const anterior = registros[registros.length - 2];
               const st = scoreSt(ultimo.pct);
               const tendencia = anterior ? ultimo.pct - anterior.pct : null;
-              const chartData = registros.map(r => ({ fecha: formatFecha(r.fecha), pct: r.pct, fechaRaw: r.fecha }));
+              const chartData = registros.map(r => ({ fecha: formatFecha(r.fecha), pct: r.pct }));
               const promedio = Math.round(registros.reduce((s, r) => s + r.pct, 0) / registros.length);
+              const maximo = Math.max(...registros.map(r => r.pct));
+              const minimo = Math.min(...registros.map(r => r.pct));
+              const stProm = scoreSt(promedio);
+              const tendenciaGlobal = registros.length >= 2 ? registros[registros.length - 1].pct - registros[0].pct : null;
 
               return (
                 <div key={planta} style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
@@ -628,21 +632,34 @@ function HistorialView({ history, onDelete }) {
                   <div style={{ padding: "16px 20px", borderBottom: `1px solid ${SandBorder}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                     <div>
                       <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 16, fontWeight: 700, color: Ink }}>{planta}</div>
-                      <div style={{ fontSize: 11, color: Muted, marginTop: 2 }}>{registros.length} auditoría{registros.length !== 1 ? "s" : ""} registrada{registros.length !== 1 ? "s" : ""}</div>
+                      <div style={{ fontSize: 11, color: Muted, marginTop: 2 }}>{registros.length} auditoría{registros.length !== 1 ? "s" : ""} · {formatFecha(registros[0].fecha)} — {formatFecha(ultimo.fecha)}</div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       {tendencia !== null && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: tendencia > 0 ? Green : tendencia < 0 ? B : Muted }}>
                           {tendencia > 0 ? "▲" : tendencia < 0 ? "▼" : "●"} {tendencia > 0 ? "+" : ""}{tendencia}% vs anterior
                         </div>
                       )}
-                      <div style={{ background: "#F0EBF8", border: "1px solid #C4A8E0", borderRadius: 20, padding: "4px 14px" }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "#6B3FA0", fontFamily: "'Nunito',sans-serif" }}>X̄ {promedio}% prom.</span>
-                      </div>
                       <div style={{ background: st.bg, border: `1px solid ${st.color}44`, borderRadius: 20, padding: "4px 14px" }}>
                         <span style={{ fontSize: 13, fontWeight: 800, color: st.color, fontFamily: "'Nunito',sans-serif" }}>{ultimo.pct}% · {st.label}</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Panel de estadísticas */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderBottom: `1px solid ${SandBorder}` }}>
+                    {[
+                      { label: "Promedio", value: `${promedio}%`, color: stProm.color, bg: stProm.bg, sub: stProm.label },
+                      { label: "Máximo", value: `${maximo}%`, color: Green, bg: GreenLight, sub: "mejor auditoría" },
+                      { label: "Mínimo", value: `${minimo}%`, color: B, bg: BLight, sub: "menor auditoría" },
+                      { label: "Tendencia", value: tendenciaGlobal === null ? "—" : `${tendenciaGlobal > 0 ? "+" : ""}${tendenciaGlobal}%`, color: tendenciaGlobal > 0 ? Green : tendenciaGlobal < 0 ? B : Muted, bg: tendenciaGlobal > 0 ? GreenLight : tendenciaGlobal < 0 ? BLight : "#F5F5F5", sub: tendenciaGlobal > 0 ? "en mejora" : tendenciaGlobal < 0 ? "en descenso" : "estable" },
+                    ].map(({ label, value, color, bg, sub }) => (
+                      <div key={label} style={{ padding: "14px 16px", background: bg, borderRight: `1px solid ${SandBorder}`, textAlign: "center" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
+                        <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 10, color, marginTop: 4, fontWeight: 600 }}>{sub}</div>
+                      </div>
+                    ))}
                   </div>
 
                   <div style={{ padding: "20px 24px 20px" }}>
@@ -659,57 +676,26 @@ function HistorialView({ history, onDelete }) {
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke={SandBorder} vertical={false} />
-                            <XAxis
-                              dataKey="fecha"
-                              tick={{ fontSize: 11, fill: Muted, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
-                              axisLine={{ stroke: SandBorder }}
-                              tickLine={false}
-                              padding={{ left: 16, right: 16 }}
-                            />
-                            <YAxis
-                              domain={[0, 100]}
-                              tick={{ fontSize: 11, fill: Muted, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
-                              axisLine={false}
-                              tickLine={false}
-                              width={42}
-                              tickFormatter={v => `${v}%`}
-                              ticks={[0, 25, 50, 75, 100]}
-                            />
+                            <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: Muted }} axisLine={{ stroke: SandBorder }} tickLine={false} padding={{ left: 16, right: 16 }} />
+                            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: Muted }} axisLine={false} tickLine={false} width={42} tickFormatter={v => `${v}%`} ticks={[0, 25, 50, 75, 100]} />
                             <Tooltip
                               formatter={v => [`${v}%`, "Cumplimiento"]}
                               labelFormatter={l => `Auditoría: ${l}`}
-                              contentStyle={{ fontSize: 12, borderRadius: 10, border: `1px solid ${SandBorder}`, boxShadow: "0 4px 16px rgba(0,0,0,0.08)", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+                              contentStyle={{ fontSize: 12, borderRadius: 10, border: `1px solid ${SandBorder}`, boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
                               labelStyle={{ fontWeight: 700, color: Ink, marginBottom: 4 }}
-                              itemStyle={{ color: B }}
                             />
                             <ReferenceLine y={80} stroke={Green} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "80%", position: "insideTopRight", fontSize: 10, fill: Green, fontWeight: 700 }} />
                             <ReferenceLine y={50} stroke={Amber} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "50%", position: "insideTopRight", fontSize: 10, fill: Amber, fontWeight: 700 }} />
-                            <ReferenceLine y={promedio} stroke="#6B3FA0" strokeDasharray="6 3" strokeWidth={2} label={{ value: `X̄ ${promedio}%`, position: "insideTopLeft", fontSize: 10, fill: "#6B3FA0", fontWeight: 700 }} />
-                            <Area
-                              type="monotone"
-                              dataKey="pct"
-                              stroke={B}
-                              strokeWidth={2.5}
-                              fill={`url(#grad-${planta.replace(/\s/g,"")})`}
-                              dot={{ r: 5, fill: White, stroke: B, strokeWidth: 2.5 }}
-                              activeDot={{ r: 7, fill: B, stroke: White, strokeWidth: 2 }}
-                            />
+                            <ReferenceLine y={promedio} stroke="#6B3FA0" strokeDasharray="6 3" strokeWidth={2} label={{ value: `Prom. ${promedio}%`, position: "insideBottomLeft", fontSize: 10, fill: "#6B3FA0", fontWeight: 700 }} />
+                            <Area type="monotone" dataKey="pct" stroke={B} strokeWidth={2.5} fill={`url(#grad-${planta.replace(/\s/g,"")})`} dot={{ r: 5, fill: White, stroke: B, strokeWidth: 2.5 }} activeDot={{ r: 7, fill: B, stroke: White, strokeWidth: 2 }} />
                             {chartData.length > 5 && (
-                              <Brush
-                                dataKey="fecha"
-                                height={22}
-                                stroke={SandBorder}
-                                fill={Sand}
-                                travellerWidth={8}
-                                startIndex={Math.max(0, chartData.length - 6)}
-                                tick={{ fontSize: 10, fill: Muted }}
-                              />
+                              <Brush dataKey="fecha" height={22} stroke={SandBorder} fill={Sand} travellerWidth={8} startIndex={Math.max(0, chartData.length - 6)} tick={{ fontSize: 10, fill: Muted }} />
                             )}
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
-                      <div style={{ display: "flex", gap: 18, marginTop: 10 }}>
-                        {[["≥ 80% Adecuado", Green], ["≥ 50% Regular", Amber], ["< 50% Deficiente", B]].map(([l, c]) => (
+                      <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                        {[["≥ 80% Adecuado", Green], ["≥ 50% Regular", Amber], ["< 50% Deficiente", B], [`Prom. ${promedio}%`, "#6B3FA0"]].map(([l, c]) => (
                           <span key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: Muted }}>
                             <span style={{ width: 22, height: 2.5, background: c, display: "inline-block", borderRadius: 2 }} />{l}
                           </span>
