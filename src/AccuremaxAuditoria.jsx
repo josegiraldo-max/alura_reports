@@ -362,17 +362,15 @@ function ReportView({ data, onBack }) {
                     <XAxis type="number" domain={[0, 120]} tick={{ fontSize: 10, fill: Muted }} axisLine={false} tickLine={false} />
                     <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: Ink }} axisLine={false} tickLine={false} />
                     <Tooltip formatter={(v, n) => [v, n === "obtenido" ? "Puntuación obtenida" : "Ponderación máxima"]} />
-                    <Bar dataKey="maximo" fill="#E2D9D0" radius={[0,3,3,0]} barSize={11} name="maximo" />
+                    <Bar dataKey="maximo" fill="#E2D9D0" radius={[0,3,3,0]} barSize={11} name="maximo">
+                      <LabelList dataKey="maximo" position="right" content={({ x, y, width, height, value }) => (
+                        <text x={x + width + 6} y={y + height / 2} textAnchor="start" dominantBaseline="middle" style={{ fontSize: 10, fontWeight: 400, fill: Muted }}>{value}</text>
+                      )} />
+                    </Bar>
                     <Bar dataKey="obtenido" fill={B} radius={[0,3,3,0]} barSize={11} name="obtenido">
-                      <LabelList dataKey="obtenido" position="right" content={({ x, y, width, height, value, index }) => {
-                        const d = barData[index];
-                        return (
-                          <text x={x + width + 6} y={y + height / 2} textAnchor="start" dominantBaseline="middle">
-                            <tspan style={{ fontSize: 10, fontWeight: 700, fill: B }}>{value}</tspan>
-                            <tspan style={{ fontSize: 10, fontWeight: 400, fill: Muted }}> ({d?.pct ?? 0}%)</tspan>
-                          </text>
-                        );
-                      }} />
+                      <LabelList dataKey="obtenido" position="right" content={({ x, y, width, height, value }) => (
+                        <text x={x + width + 6} y={y + height / 2} textAnchor="start" dominantBaseline="middle" style={{ fontSize: 10, fontWeight: 700, fill: B }}>{value}</text>
+                      )} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
