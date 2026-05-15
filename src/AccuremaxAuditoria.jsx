@@ -41,6 +41,11 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
   .report-hero-grid{grid-template-columns:1fr!important}
   .report-hero-img{display:none!important}
   .tab-label{display:none}
+  .hdr-confidencial{display:none!important}
+  .hdr-separator{display:none!important}
+  .hdr-logo{height:26px!important}
+  .hdr-tabs button{padding:0 12px!important;font-size:10px!important;letter-spacing:0.05em!important}
+  .hdr-inner{padding:0 12px!important}
 }
 @media print{
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
@@ -1002,15 +1007,15 @@ export default function AccuremaxApp() {
 
       {/* HEADER with tabs */}
       <div className="no-print" style={{ background: B, borderBottom: `3px solid ${BDark}` }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "stretch", justifyContent: "space-between" }}>
-          <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 14 }}>
-            <img src="/Asset 63@3x.png" alt="Alura" style={{ height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
-            <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
-            <div style={{ fontSize: 9, letterSpacing: "0.16em", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", lineHeight: 1.6 }}>
+        <div className="hdr-inner" style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "stretch", justifyContent: "space-between" }}>
+          <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+            <img className="hdr-logo" src="/Asset 63@3x.png" alt="Alura" style={{ height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+            <div className="hdr-separator" style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
+            <div className="hdr-confidencial" style={{ fontSize: 9, letterSpacing: "0.16em", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", lineHeight: 1.6 }}>
               Uso confidencial<br />interno Alura
             </div>
           </div>
-          <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
+          <div className="hdr-tabs" style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
             {[{ id: "form", label: "Datos" }, { id: "report", label: "Informe" }, { id: "historial", label: "Historial" }].map(tab => (
               <button key={tab.id} onClick={() => { if (tab.id === "report") { saveToHistory(); setView("report"); } else { setView(tab.id); } }}
                 style={{ padding: "0 22px", background: view === tab.id ? "rgba(255,255,255,0.15)" : "transparent", border: "none", borderBottom: view === tab.id ? "3px solid white" : "3px solid transparent", color: view === tab.id ? White : "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all .15s", marginBottom: "-3px" }}>
