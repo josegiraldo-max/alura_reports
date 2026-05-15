@@ -1034,7 +1034,7 @@ export default function AccuremaxApp() {
           </div>
           <div className="hdr-tabs" style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
             {[{ id: "form", label: "Datos" }, { id: "report", label: "Informe" }, { id: "historial", label: "Historial" }].map(tab => (
-              <button key={tab.id} onClick={() => { if (tab.id === "report") { saveToHistory(); setView("report"); } else { setView(tab.id); } }}
+              <button key={tab.id} onClick={() => { window.scrollTo(0, 0); if (tab.id === "report") { saveToHistory(); setView("report"); } else { setView(tab.id); } }}
                 style={{ padding: "0 22px", background: view === tab.id ? "rgba(255,255,255,0.15)" : "transparent", border: "none", borderBottom: view === tab.id ? "3px solid white" : "3px solid transparent", color: view === tab.id ? White : "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all .15s", marginBottom: "-3px" }}>
                 {tab.label}
               </button>
@@ -1369,7 +1369,7 @@ export default function AccuremaxApp() {
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                     <div style={{ textAlign: "center" }}><div style={{ fontSize: 12, fontWeight: 700 }}>Exportar datos</div><div style={{ fontSize: 10, opacity: 0.6, marginTop: 1 }}>Excel</div></div>
                   </button>
-                  <button onClick={() => setView("report")}
+                  <button onClick={() => { saveToHistory(); window.scrollTo(0, 0); setView("report"); }}
                     style={{ padding: "18px 10px", borderRadius: 10, background: White, border: `1.5px solid ${White}`, color: B, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, transition: "background .15s" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f5e8e8")} onMouseLeave={e => (e.currentTarget.style.background = White)}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={B} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
