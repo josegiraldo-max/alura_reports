@@ -620,6 +620,7 @@ function HistorialView({ history, onDelete }) {
               const st = scoreSt(ultimo.pct);
               const tendencia = anterior ? ultimo.pct - anterior.pct : null;
               const chartData = registros.map(r => ({ fecha: formatFecha(r.fecha), pct: r.pct, fechaRaw: r.fecha }));
+              const promedio = Math.round(registros.reduce((s, r) => s + r.pct, 0) / registros.length);
 
               return (
                 <div key={planta} style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
@@ -629,12 +630,15 @@ function HistorialView({ history, onDelete }) {
                       <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 16, fontWeight: 700, color: Ink }}>{planta}</div>
                       <div style={{ fontSize: 11, color: Muted, marginTop: 2 }}>{registros.length} auditoría{registros.length !== 1 ? "s" : ""} registrada{registros.length !== 1 ? "s" : ""}</div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       {tendencia !== null && (
                         <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: tendencia > 0 ? Green : tendencia < 0 ? B : Muted }}>
                           {tendencia > 0 ? "▲" : tendencia < 0 ? "▼" : "●"} {tendencia > 0 ? "+" : ""}{tendencia}% vs anterior
                         </div>
                       )}
+                      <div style={{ background: "#F0EBF8", border: "1px solid #C4A8E0", borderRadius: 20, padding: "4px 14px" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#6B3FA0", fontFamily: "'Nunito',sans-serif" }}>X̄ {promedio}% prom.</span>
+                      </div>
                       <div style={{ background: st.bg, border: `1px solid ${st.color}44`, borderRadius: 20, padding: "4px 14px" }}>
                         <span style={{ fontSize: 13, fontWeight: 800, color: st.color, fontFamily: "'Nunito',sans-serif" }}>{ultimo.pct}% · {st.label}</span>
                       </div>
@@ -680,6 +684,7 @@ function HistorialView({ history, onDelete }) {
                             />
                             <ReferenceLine y={80} stroke={Green} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "80%", position: "insideTopRight", fontSize: 10, fill: Green, fontWeight: 700 }} />
                             <ReferenceLine y={50} stroke={Amber} strokeDasharray="5 4" strokeWidth={1.5} label={{ value: "50%", position: "insideTopRight", fontSize: 10, fill: Amber, fontWeight: 700 }} />
+                            <ReferenceLine y={promedio} stroke="#6B3FA0" strokeDasharray="6 3" strokeWidth={2} label={{ value: `X̄ ${promedio}%`, position: "insideTopLeft", fontSize: 10, fill: "#6B3FA0", fontWeight: 700 }} />
                             <Area
                               type="monotone"
                               dataKey="pct"
