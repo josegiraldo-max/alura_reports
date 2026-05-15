@@ -57,13 +57,16 @@ input,select,textarea,button{font-family:'Plus Jakarta Sans',sans-serif}
 .rpt-3col{display:grid;grid-template-columns:1fr 1fr 1fr}
 .rpt-photos{display:grid;grid-template-columns:1fr 1fr}
 .rpt-concl{display:grid;grid-template-columns:1fr auto}
-.rpt-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 16px}
+.rpt-topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;padding:10px 16px}
+.rpt-btn-label{display:inline}
 @media(max-width:700px){
   .rpt-hero,.rpt-2col,.rpt-3col,.rpt-photos,.rpt-concl{grid-template-columns:1fr!important}
   .rpt-2col-sm{grid-template-columns:1fr!important}
   .rpt-info{grid-template-columns:1fr 1fr!important}
-  .rpt-topbar{padding:8px 12px}
-  .rpt-topbar .rpt-title{font-size:13px!important}
+  .rpt-topbar{padding:7px 10px;gap:6px}
+  .rpt-topbar .rpt-title{font-size:11px!important}
+  .rpt-btn-label{display:none}
+  .rpt-score-label{display:none}
 }
 `;
 
@@ -249,38 +252,12 @@ function ReportView({ data, onBack }) {
     ["Operario", form.operario || "—"],
   ].filter(([, v]) => v && v !== "—");
 
-  const handlePDF = async () => {
-    const el = document.getElementById("report-body");
-    if (!el) return;
-    const [{ jsPDF }, html2canvas] = await Promise.all([
-      import("jspdf"),
-      import("html2canvas").then(m => m.default),
-    ]);
-    // temporarily hide sticky top bar so it doesn't appear in the capture
-    const topBar = el.previousElementSibling;
-    if (topBar) topBar.style.visibility = "hidden";
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      backgroundColor: "#F5F2EE",
-    });
-    if (topBar) topBar.style.visibility = "";
-    const imgData = canvas.toDataURL("image/jpeg", 0.93);
-    const pxW = canvas.width, pxH = canvas.height;
-    const mmW = 210;
-    const mmH = Math.round((pxH / pxW) * mmW);
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [mmW, mmH] });
-    doc.addImage(imgData, "JPEG", 0, 0, mmW, mmH);
-    const fileName = `informe_auditoria_${(form.planta || "planta").replace(/\s+/g, "_")}_${form.fecha || "2026"}.pdf`;
-    doc.save(fileName);
-  };
+  const handlePDF = () => window.print();
 
   const handleExportHTML = () => {
     const el = document.getElementById("report-body");
     if (!el) return;
-    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría Magro — Alura</title><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Plus Jakarta Sans',sans-serif;background:#F5F2EE;color:#2C2A28;padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}</style></head><body>${el.innerHTML}</body></html>`;
+    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría — ${form.planta || "Alura"} · ${form.fecha || ""}</title><style>${css}body{padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}.no-print{display:none!important}</style></head><body>${el.innerHTML}</body></html>`;
     const blob = new Blob([full], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url;
@@ -306,21 +283,21 @@ function ReportView({ data, onBack }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ background: overallSt.bg, border: `1px solid ${overallSt.color}44`, borderRadius: 20, padding: "4px 12px", display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: overallSt.color }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: overallSt.color }}>{totalPct}% · {totalScore}/100</span>
+          <div style={{ background: overallSt.bg, border: `1px solid ${overallSt.color}44`, borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: overallSt.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: overallSt.color, whiteSpace: "nowrap" }}>{totalPct}%<span className="rpt-score-label"> · {totalScore}/100</span></span>
           </div>
           <button onClick={handleExportHTML}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: Ink, border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: White, cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: Ink, border: "none", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700, color: White, cursor: "pointer", flexShrink: 0 }}
             onMouseEnter={e => (e.currentTarget.style.background = "#444")} onMouseLeave={e => (e.currentTarget.style.background = Ink)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Descargar HTML
+            <span className="rpt-btn-label">HTML</span>
           </button>
           <button onClick={handlePDF}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: B, border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, color: White, cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: 6, background: B, border: "none", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700, color: White, cursor: "pointer", flexShrink: 0 }}
             onMouseEnter={e => (e.currentTarget.style.background = BDark)} onMouseLeave={e => (e.currentTarget.style.background = B)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
-            Descargar PDF
+            <span className="rpt-btn-label">PDF</span>
           </button>
         </div>
       </div>
