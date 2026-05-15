@@ -584,6 +584,68 @@ function ReportView({ data, onBack }) {
     </div>
   );
 }
+function HistorialView({ history, onDelete }) {
+  const scoreSt = (pct) => pct >= 80 ? { label: "Adecuado", color: Green, bg: GreenLight } : pct >= 50 ? { label: "Regular", color: Amber, bg: AmberLight } : { label: "Deficiente", color: B, bg: BLight };
+  const formatFecha = (f) => { try { const [y, m, d] = f.split("-"); return `${d}/${m}/${y}`; } catch { return f; } };
+
+  return (
+    <div style={{ minHeight: "100vh", background: Sand, padding: "32px 24px 48px" }}>
+      <div style={{ maxWidth: 860, margin: "0 auto" }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 20, fontWeight: 700, color: Ink }}>Historial de auditorías</div>
+          <div style={{ fontSize: 13, color: Muted, marginTop: 6, fontStyle: "italic" }}>Seguimiento de cumplimiento por planta</div>
+        </div>
+
+        {history.length === 0 ? (
+          <div style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, padding: "48px 24px", textAlign: "center", color: Muted }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Sin registros aún</div>
+            <div style={{ fontSize: 12, marginTop: 6 }}>Cada vez que abras la pestaña "Informe" se guardará automáticamente el resultado.</div>
+          </div>
+        ) : (
+          <div style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: Sand, borderBottom: `1px solid ${SandBorder}` }}>
+                  {["Fecha", "Planta", "Puntaje", "% Cumplimiento", "Estado", ""].map((h, i) => (
+                    <th key={i} style={{ padding: "12px 16px", textAlign: i >= 2 ? "center" : "left", fontSize: 11, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((r, idx) => {
+                  const st = scoreSt(r.pct);
+                  return (
+                    <tr key={r.id} style={{ borderBottom: idx < history.length - 1 ? `1px solid ${SandBorder}` : "none", background: idx % 2 === 0 ? White : "#FAFAF8" }}>
+                      <td style={{ padding: "12px 16px", fontSize: 13, color: Ink, whiteSpace: "nowrap" }}>{formatFecha(r.fecha)}</td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: Ink }}>{r.planta}</td>
+                      <td style={{ padding: "12px 16px", fontSize: 13, color: Ink, textAlign: "center" }}>{r.score}/100</td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <div style={{ display: "inline-block", fontSize: 15, fontWeight: 800, color: st.color, fontFamily: "'Nunito',sans-serif" }}>{r.pct}%</div>
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <span style={{ display: "inline-block", background: st.bg, color: st.color, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{st.label}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                        <button onClick={() => onDelete(r.id)} title="Eliminar registro"
+                          style={{ background: "transparent", border: "none", cursor: "pointer", color: Muted, padding: 4, borderRadius: 4, lineHeight: 1 }}
+                          onMouseEnter={e => e.currentTarget.style.color = B}
+                          onMouseLeave={e => e.currentTarget.style.color = Muted}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const FORM_DEFAULTS = { planta: "", fecha: new Date().toISOString().split("T")[0], responsable: "", responsablePlanta: "", operario: "", equipo: "GP4", canalesTotal: "", canalesInclinadas: "", canalObs: "", observaciones: "", conclusiones: "" };
 
 function formReducer(state, action) {
@@ -608,6 +670,7 @@ export default function AccuremaxApp() {
   const [recs, setRecs] = useState(() => { try { const d = JSON.parse(localStorage.getItem("alura_audit_draft")||"{}"); return d.recs||{}; } catch { return {}; } });
   const [customRec, setCustomRec] = useState(() => { try { const d = JSON.parse(localStorage.getItem("alura_audit_draft")||"{}"); return d.customRec||""; } catch { return ""; } });
   const [concls, setConcls] = useState(() => { try { const d = JSON.parse(localStorage.getItem("alura_audit_draft")||"{}"); return d.concls||{}; } catch { return {}; } });
+  const [history, setHistory] = useState(() => { try { return JSON.parse(localStorage.getItem("alura_audit_history") || "[]"); } catch { return []; } });
   const [toast, setToast] = useState(null);
   const [recsOpen, setRecsOpen] = useState(false);
   const [conclsOpen, setConclsOpen] = useState(false);
@@ -640,6 +703,30 @@ export default function AccuremaxApp() {
   const toggleRec = id => setRecs(r => ({ ...r, [id]: !r[id] }));
   const toggleConcl = id => setConcls(c => ({ ...c, [id]: !c[id] }));
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3000); };
+
+  const saveToHistory = () => {
+    if (!form.planta || !form.fecha) return;
+    const totalCanales = Object.values(canalCounts).reduce((a, b) => a + b, 0);
+    const bPct = totalCanales > 0 ? Math.round((canalCounts.B / totalCanales) * 100) : 0;
+    const canalScore = bPct > 81 ? 60 : bPct >= 51 ? 45 : bPct >= 31 ? 30 : bPct > 0 ? 15 : 0;
+    const eqNumVal = Number(eqScore);
+    const totalScore = canalScore + (eqScore !== "" ? eqNumVal : 0) + equipTotal;
+    const totalPct = Math.round((totalScore / 100) * 100);
+    const record = { id: Date.now(), planta: form.planta, fecha: form.fecha, pct: totalPct, score: totalScore };
+    setHistory(prev => {
+      const next = [record, ...prev];
+      try { localStorage.setItem("alura_audit_history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const deleteHistory = (id) => {
+    setHistory(prev => {
+      const next = prev.filter(r => r.id !== id);
+      try { localStorage.setItem("alura_audit_history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const handleReset = () => {
     if (!window.confirm("¿Borrar todo el formulario? Esta acción no se puede deshacer.")) return;
@@ -772,8 +859,8 @@ export default function AccuremaxApp() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 0, alignItems: "stretch" }}>
-            {[{ id: "form", label: "Datos" }, { id: "report", label: "Informe" }].map(tab => (
-              <button key={tab.id} onClick={() => tab.id === "report" ? setView("report") : setView("form")}
+            {[{ id: "form", label: "Datos" }, { id: "report", label: "Informe" }, { id: "historial", label: "Historial" }].map(tab => (
+              <button key={tab.id} onClick={() => { if (tab.id === "report") { saveToHistory(); setView("report"); } else { setView(tab.id); } }}
                 style={{ padding: "0 22px", background: view === tab.id ? "rgba(255,255,255,0.15)" : "transparent", border: "none", borderBottom: view === tab.id ? "3px solid white" : "3px solid transparent", color: view === tab.id ? White : "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all .15s", marginBottom: "-3px" }}>
                 {tab.label}
               </button>
@@ -784,6 +871,8 @@ export default function AccuremaxApp() {
 
       {view === "report" ? (
         <ReportView data={reportData} onBack={() => setView("form")} />
+      ) : view === "historial" ? (
+        <HistorialView history={history} onDelete={deleteHistory} />
       ) : (
         <div style={{ minHeight: "100vh", background: Sand }}>
           <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 24px 48px" }}>
