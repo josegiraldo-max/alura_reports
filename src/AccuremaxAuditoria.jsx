@@ -836,9 +836,15 @@ export default function AccuremaxApp() {
     const eqNumVal = Number(eqScore);
     const totalScore = canalScore + (eqScore !== "" ? eqNumVal : 0) + equipTotal;
     const totalPct = Math.round((totalScore / 100) * 100);
-    const record = { id: Date.now(), planta: form.planta, fecha: form.fecha, pct: totalPct, score: totalScore };
     setHistory(prev => {
-      const next = [record, ...prev];
+      const existIdx = prev.findIndex(r => r.planta === form.planta && r.fecha === form.fecha);
+      let next;
+      if (existIdx >= 0) {
+        next = [...prev];
+        next[existIdx] = { ...next[existIdx], pct: totalPct, score: totalScore };
+      } else {
+        next = [{ id: Date.now(), planta: form.planta, fecha: form.fecha, pct: totalPct, score: totalScore }, ...prev];
+      }
       try { localStorage.setItem("alura_audit_history", JSON.stringify(next)); } catch {}
       return next;
     });
