@@ -597,12 +597,37 @@ function HistorialView({ history, onDelete }) {
 
   const plantas = Object.keys(byPlanta);
 
+  const exportHistorialExcel = () => {
+    const wb = XLSX.utils.book_new();
+    const headers = ['Fecha auditoría','Planta de beneficio','Pts. Inspección canales (máx. 60)','Pts. Verificación ecuación (máx. 20)','Pts. Estado equipo (máx. 20)','Total (máx. 100)','% Cumplimiento','Estado'];
+    const sorted = [...history].sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const rows = [headers, ...sorted.map(r => {
+      const st = scoreSt(r.pct);
+      return [formatFecha(r.fecha), r.planta, '—', '—', '—', r.score ?? r.pct, `${r.pct}%`, st.label];
+    })];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 16 },{ wch: 26 },{ wch: 32 },{ wch: 34 },{ wch: 28 },{ wch: 14 },{ wch: 14 },{ wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Registro auditorías');
+    XLSX.writeFile(wb, `Registro_Auditorias_Alura_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: Sand, padding: "32px 24px 48px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 20, fontWeight: 700, color: Ink }}>Historial de auditorías</div>
-          <div style={{ fontSize: 13, color: Muted, marginTop: 6, fontStyle: "italic" }}>Evolución de cumplimiento por planta</div>
+        <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 20, fontWeight: 700, color: Ink }}>Historial de auditorías</div>
+            <div style={{ fontSize: 13, color: Muted, marginTop: 6, fontStyle: "italic" }}>Evolución de cumplimiento por planta</div>
+          </div>
+          {history.length > 0 && (
+            <button onClick={exportHistorialExcel}
+              style={{ display: "flex", alignItems: "center", gap: 8, background: Green, border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, color: White, cursor: "pointer", whiteSpace: "nowrap" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="15" x2="12" y2="3"/><polyline points="7 15 12 20 17 15"/></svg>
+              Descargar registro Excel
+            </button>
+          )}
         </div>
 
         {history.length === 0 ? (
