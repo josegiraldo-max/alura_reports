@@ -973,7 +973,7 @@ export default function AccuremaxApp() {
       <div className="no-print" style={{ background: B, borderBottom: `3px solid ${BDark}` }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "stretch", justifyContent: "space-between" }}>
           <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 14 }}>
-            <img src="/logo alura.png" alt="Alura" style={{ height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+            <img src="/Asset 63@3x.png" alt="Alura" style={{ height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
             <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
             <div style={{ fontSize: 9, letterSpacing: "0.16em", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", lineHeight: 1.6 }}>
               Uso confidencial<br />interno Alura
