@@ -159,19 +159,19 @@ function scoreColor(score, max) {
 
 // ── RADIAL GAUGE (SVG) ────────────────────────────────────────────────────
 function RadialGauge({ pct, size = 140, color, label }) {
-  const r = (size / 2) - 12;
+  const r = (size / 2) - 10;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}20`} strokeWidth={10} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={10}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={`${color}20`} strokeWidth={9} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={9}
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: "stroke-dasharray 1s ease" }} />
-      <text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="middle" fill={color}
-        style={{ fontFamily: "'Nunito',sans-serif", fontSize: size * 0.30, fontWeight: 700 }}>{pct}%</text>
-      <text x={size/2} y={size/2 + size * 0.20} textAnchor="middle" fill={color}
-        style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: size * 0.09, fontWeight: 600 }}>{label}</text>
+      <text x={size/2} y={size/2 - size * 0.04} textAnchor="middle" dominantBaseline="middle" fill={color}
+        style={{ fontFamily: "'Nunito',sans-serif", fontSize: size * 0.22, fontWeight: 700 }}>{pct}%</text>
+      <text x={size/2} y={size/2 + size * 0.16} textAnchor="middle" fill={color}
+        style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: size * 0.09, fontWeight: 600, opacity: 0.8 }}>{label}</text>
     </svg>
   );
 }
@@ -285,7 +285,8 @@ function ReportView({ data, onBack }) {
   const handleExportHTML = () => {
     const el = document.getElementById("report-body");
     if (!el) return;
-    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría — ${form.planta || "Alura"} · ${form.fecha || ""}</title><style>${css}body{padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}.no-print{display:none!important}</style></head><body>${el.innerHTML}</body></html>`;
+    const origin = window.location.origin;
+    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría — ${form.planta || "Alura"} · ${form.fecha || ""}</title><link rel="icon" type="image/png" href="${origin}/logo alura.png"><style>${css}body{padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}.no-print{display:none!important}</style></head><body>${el.innerHTML}</body></html>`;
     const blob = new Blob([full], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url;
