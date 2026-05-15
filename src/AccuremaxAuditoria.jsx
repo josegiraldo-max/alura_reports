@@ -252,16 +252,34 @@ function ReportView({ data, onBack }) {
     ["Operario", form.operario || "—"],
   ].filter(([, v]) => v && v !== "—");
 
-  const handlePDF = () => {
+  const handlePDF = async () => {
     const el = document.getElementById("report-body");
-    const heightPx = el ? el.scrollHeight : 1400;
-    const heightMm = Math.ceil(heightPx * 0.2646) + 20;
-    const style = document.createElement("style");
-    style.id = "__pdf-page-size__";
-    style.textContent = `@page { size: 210mm ${heightMm}mm; margin: 0; } @media print { #report-body { padding: 16px !important; } }`;
-    document.head.appendChild(style);
-    window.print();
-    setTimeout(() => document.getElementById("__pdf-page-size__")?.remove(), 1000);
+    if (!el) return;
+    const topBar = el.previousElementSibling;
+    if (topBar) topBar.style.visibility = "hidden";
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: "#F5F2EE",
+        windowWidth: 960,
+      });
+      if (topBar) topBar.style.visibility = "";
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      const mmW = 210;
+      const mmH = Math.ceil((canvas.height / canvas.width) * mmW);
+      const mod = await import("jspdf");
+      const JsPDF = mod.jsPDF ?? mod.default?.jsPDF ?? mod.default;
+      const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: [mmW, mmH], compress: true });
+      doc.addImage(imgData, "JPEG", 0, 0, mmW, mmH);
+      doc.save(`informe_${(form.planta || "planta").replace(/\s+/g, "_")}_${form.fecha || "2026"}.pdf`);
+    } catch (err) {
+      if (topBar) topBar.style.visibility = "";
+      window.print();
+    }
   };
 
   const handleExportHTML = () => {
