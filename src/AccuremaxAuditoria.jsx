@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo, useReducer } from "react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, ReferenceLine } from "recharts";
 import * as XLSX from "xlsx";
 
 const loadImgBase64 = (url) =>
@@ -586,12 +586,23 @@ function HistorialView({ history, onDelete }) {
   const scoreSt = (pct) => pct >= 80 ? { label: "Adecuado", color: Green, bg: GreenLight } : pct >= 50 ? { label: "Regular", color: Amber, bg: AmberLight } : { label: "Deficiente", color: B, bg: BLight };
   const formatFecha = (f) => { try { const [y, m, d] = f.split("-"); return `${d}/${m}/${y}`; } catch { return f; } };
 
+  const byPlanta = useMemo(() => {
+    const map = {};
+    [...history].sort((a, b) => a.fecha.localeCompare(b.fecha)).forEach(r => {
+      if (!map[r.planta]) map[r.planta] = [];
+      map[r.planta].push(r);
+    });
+    return map;
+  }, [history]);
+
+  const plantas = Object.keys(byPlanta);
+
   return (
     <div style={{ minHeight: "100vh", background: Sand, padding: "32px 24px 48px" }}>
-      <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 20, fontWeight: 700, color: Ink }}>Historial de auditorías</div>
-          <div style={{ fontSize: 13, color: Muted, marginTop: 6, fontStyle: "italic" }}>Seguimiento de cumplimiento por planta</div>
+          <div style={{ fontSize: 13, color: Muted, marginTop: 6, fontStyle: "italic" }}>Evolución de cumplimiento por planta</div>
         </div>
 
         {history.length === 0 ? (
@@ -601,42 +612,100 @@ function HistorialView({ history, onDelete }) {
             <div style={{ fontSize: 12, marginTop: 6 }}>Cada vez que abras la pestaña "Informe" se guardará automáticamente el resultado.</div>
           </div>
         ) : (
-          <div style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: Sand, borderBottom: `1px solid ${SandBorder}` }}>
-                  {["Fecha", "Planta", "Puntaje", "% Cumplimiento", "Estado", ""].map((h, i) => (
-                    <th key={i} style={{ padding: "12px 16px", textAlign: i >= 2 ? "center" : "left", fontSize: 11, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((r, idx) => {
-                  const st = scoreSt(r.pct);
-                  return (
-                    <tr key={r.id} style={{ borderBottom: idx < history.length - 1 ? `1px solid ${SandBorder}` : "none", background: idx % 2 === 0 ? White : "#FAFAF8" }}>
-                      <td style={{ padding: "12px 16px", fontSize: 13, color: Ink, whiteSpace: "nowrap" }}>{formatFecha(r.fecha)}</td>
-                      <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: Ink }}>{r.planta}</td>
-                      <td style={{ padding: "12px 16px", fontSize: 13, color: Ink, textAlign: "center" }}>{r.score}/100</td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        <div style={{ display: "inline-block", fontSize: 15, fontWeight: 800, color: st.color, fontFamily: "'Nunito',sans-serif" }}>{r.pct}%</div>
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        <span style={{ display: "inline-block", background: st.bg, color: st.color, borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{st.label}</span>
-                      </td>
-                      <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        <button onClick={() => onDelete(r.id)} title="Eliminar registro"
-                          style={{ background: "transparent", border: "none", cursor: "pointer", color: Muted, padding: 4, borderRadius: 4, lineHeight: 1 }}
-                          onMouseEnter={e => e.currentTarget.style.color = B}
-                          onMouseLeave={e => e.currentTarget.style.color = Muted}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {plantas.map(planta => {
+              const registros = byPlanta[planta];
+              const ultimo = registros[registros.length - 1];
+              const anterior = registros[registros.length - 2];
+              const st = scoreSt(ultimo.pct);
+              const tendencia = anterior ? ultimo.pct - anterior.pct : null;
+              const chartData = registros.map(r => ({ fecha: formatFecha(r.fecha), pct: r.pct, fechaRaw: r.fecha }));
+
+              return (
+                <div key={planta} style={{ background: White, borderRadius: 12, border: `1px solid ${SandBorder}`, overflow: "hidden" }}>
+                  {/* Header planta */}
+                  <div style={{ padding: "16px 20px", borderBottom: `1px solid ${SandBorder}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                    <div>
+                      <div style={{ fontFamily: "'Nunito',sans-serif", fontSize: 16, fontWeight: 700, color: Ink }}>{planta}</div>
+                      <div style={{ fontSize: 11, color: Muted, marginTop: 2 }}>{registros.length} auditoría{registros.length !== 1 ? "s" : ""} registrada{registros.length !== 1 ? "s" : ""}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {tendencia !== null && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: tendencia > 0 ? Green : tendencia < 0 ? B : Muted }}>
+                          {tendencia > 0 ? "▲" : tendencia < 0 ? "▼" : "●"} {tendencia > 0 ? "+" : ""}{tendencia}% vs anterior
+                        </div>
+                      )}
+                      <div style={{ background: st.bg, border: `1px solid ${st.color}44`, borderRadius: 20, padding: "4px 14px" }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: st.color, fontFamily: "'Nunito',sans-serif" }}>{ultimo.pct}% · {st.label}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: "16px 20px 8px", display: "flex", gap: 24, flexWrap: "wrap" }}>
+                    {/* Gráfica evolución */}
+                    <div style={{ flex: "1 1 300px", minWidth: 260 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Evolución de cumplimiento</div>
+                      <div style={{ height: 160 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                            <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: Muted }} axisLine={false} tickLine={false} />
+                            <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: Muted }} axisLine={false} tickLine={false} width={28} tickFormatter={v => `${v}%`} />
+                            <Tooltip formatter={v => [`${v}%`, "Cumplimiento"]} labelStyle={{ fontSize: 11, color: Ink }} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${SandBorder}` }} />
+                            <ReferenceLine y={80} stroke={Green} strokeDasharray="4 3" strokeWidth={1} />
+                            <ReferenceLine y={50} stroke={Amber} strokeDasharray="4 3" strokeWidth={1} />
+                            <Line type="monotone" dataKey="pct" stroke={B} strokeWidth={2.5} dot={{ r: 4, fill: B, strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
+                        {[["≥80% Adecuado", Green], ["≥50% Regular", Amber], ["<50% Deficiente", B]].map(([l, c]) => (
+                          <span key={l} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: Muted }}>
+                            <span style={{ width: 18, height: 2, background: c, display: "inline-block", borderRadius: 1 }} />{l}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tabla de registros */}
+                    <div style={{ flex: "1 1 220px", minWidth: 200 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: Muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Registros</div>
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                          <tr style={{ borderBottom: `1px solid ${SandBorder}` }}>
+                            {["Fecha", "%", "Estado", ""].map((h, i) => (
+                              <th key={i} style={{ padding: "4px 8px", textAlign: i === 0 ? "left" : "center", fontSize: 10, fontWeight: 700, color: Muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...registros].reverse().map((r, idx) => {
+                            const rst = scoreSt(r.pct);
+                            return (
+                              <tr key={r.id} style={{ borderBottom: idx < registros.length - 1 ? `1px solid ${SandBorder}` : "none" }}>
+                                <td style={{ padding: "7px 8px", fontSize: 12, color: Ink, whiteSpace: "nowrap" }}>{formatFecha(r.fecha)}</td>
+                                <td style={{ padding: "7px 8px", fontSize: 13, fontWeight: 800, color: rst.color, textAlign: "center", fontFamily: "'Nunito',sans-serif" }}>{r.pct}%</td>
+                                <td style={{ padding: "7px 8px", textAlign: "center" }}>
+                                  <span style={{ background: rst.bg, color: rst.color, borderRadius: 5, padding: "2px 7px", fontSize: 10, fontWeight: 700 }}>{rst.label}</span>
+                                </td>
+                                <td style={{ padding: "7px 8px", textAlign: "center" }}>
+                                  <button onClick={() => onDelete(r.id)} title="Eliminar"
+                                    style={{ background: "transparent", border: "none", cursor: "pointer", color: Muted, padding: 3, lineHeight: 1 }}
+                                    onMouseEnter={e => e.currentTarget.style.color = B}
+                                    onMouseLeave={e => e.currentTarget.style.color = Muted}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div style={{ height: 12 }} />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
