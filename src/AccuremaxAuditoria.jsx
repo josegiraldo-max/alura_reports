@@ -287,11 +287,28 @@ function ReportView({ data, onBack }) {
     }
   };
 
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     const el = document.getElementById("report-body");
     if (!el) return;
+
+    // Clone DOM and replace blob URLs with base64
+    const clone = el.cloneNode(true);
+    const imgs = clone.querySelectorAll("img[src^='blob:']");
+    await Promise.all([...imgs].map(async img => {
+      try {
+        const res = await fetch(img.src);
+        const blob = await res.blob();
+        const b64 = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+        img.src = b64;
+      } catch {}
+    }));
+
     const origin = window.location.origin;
-    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría — ${form.planta || "Alura"} · ${form.fecha || ""}</title><link rel="icon" type="image/png" href="${origin}/logo alura.png"><style>${css}body{padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}.no-print{display:none!important}</style></head><body>${el.innerHTML}</body></html>`;
+    const full = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Informe Auditoría — ${form.planta || "Alura"} · ${form.fecha || ""}</title><link rel="icon" type="image/png" href="${origin}/logo alura.png"><style>${css}body{padding:24px}svg text{font-family:'Plus Jakarta Sans',sans-serif}.no-print{display:none!important}</style></head><body>${clone.innerHTML}</body></html>`;
     const blob = new Blob([full], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url;
